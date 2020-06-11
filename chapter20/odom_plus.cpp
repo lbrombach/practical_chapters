@@ -1,8 +1,10 @@
 /*
-*This is a ROS node that subscribes to encoder count messages and publishes odometry
+*This is a version of encoder_odom_pub.cpp ROS node that subscribes to encoder count messages and publishes odometry
 *on in a simple form where orientation.z is an euler angle, then publishes again
-*on a topic that uses the quaternion version of the message. This is written
-*to be readable for all levels and accompanies the book Practical Robotics in C++.
+*on a topic that uses the quaternion version of the message. This version
+*subscribes to an IMU topic and adjusts the heading of this node with the IMU heading data.
+*This is intended to be used with an IMU like a BN0055 with a built-in fusion algorithm
+*to improve odometry. This is written to be readable for all levels and accompanies the book Practical Robotics in C++.
 *
 *Author: Lloyd Brombach (lbrombach2@gmail.com)
 *11/7/2019
@@ -12,8 +14,10 @@
 #include "std_msgs/Int16.h"
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <sensor_msgs/Imu.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf/transform_broadcaster.h>
 #include <cmath>
 
 ros::Publisher odom_pub;
@@ -35,6 +39,10 @@ double leftDistance = 0;
 double rightDistance = 0;
 bool initialPoseRecieved = false;
 
+float imuHeading = 0;
+float headingOffset = 0;
+bool haveNewImuHeading = false;
+bool imuHeadingInitialized = false;
 
 using namespace std;
 
@@ -42,10 +50,16 @@ using namespace std;
 //at at least one is required to start this node publishing
 void setInitialPose(const geometry_msgs::PoseStamped &rvizClick)
 {
+    cout<<"Got initial pose. Starting node"<<endl;
+
+     headingOffset = rvizClick.pose.orientation.z - imuHeading;
+     cout<<"heading offset = "<<rvizClick.pose.orientation.z<<" - "<<imuHeading<<" = "<<headingOffset<<endl;
+
      oldOdom.pose.pose.position.x = rvizClick.pose.position.x;
      oldOdom.pose.pose.position.y = rvizClick.pose.position.y;
      oldOdom.pose.pose.orientation.z = rvizClick.pose.orientation.z;
      initialPoseRecieved = true;
+     imuHeadingInitialized = true;
 }
 
 //calculate distance left wheel has traveled since last cycle
@@ -91,7 +105,7 @@ static int lastCountR = 0;
 
 //publishes the simpler version of the odom message in full quaternion form
 //and includes covariance data. This covariance should be "personalized"
-//for every specific robot.
+//for a specific robot before it is used.
 void publish_quat()
 {
     tf2::Quaternion q;
@@ -133,6 +147,72 @@ void publish_quat()
 
     pub_quat.publish(quatOdom);
 
+}
+
+//checks if rate of change is realistic or likely error
+bool isSafeRateOfChange(float headings[], double times[])
+{
+    double rate[3] = {0};
+    for(int i = 0; i<3; i++)
+    {
+        double timeElapsed = headings[i] - headings[i+1];
+        if(timeElapsed != 0)
+        {
+            //calculate radians per second
+            rate[i]=abs(headings[i]-headings[i+1]) / timeElapsed;
+        }
+        if(rate[i] > .785 || timeElapsed == 0) // .785 = about 45 degrees/sec
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+void update_heading(const sensor_msgs::Imu &imuMsg)
+{
+    //element zero will be most recent heading recieved from imu
+    static float headings[4]={0};
+    static double times[4] = {0};
+
+
+    if(imuMsg.orientation_covariance[0] != -1)
+    {
+        tf::Quaternion q(imuMsg.orientation.x, imuMsg.orientation.y, imuMsg.orientation.z, imuMsg.orientation.w);
+        tf::Matrix3x3 m(q);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+
+        //saves 4 cycles' worth of yaw and times stamps  for next step
+        for(int i = 3; i>0; i++)
+        {
+            headings[i] = headings[i-1];
+            times[i] = times[i-1];
+        }
+        headings[0] = yaw;
+        times[0] = ros::Time::now().toSec();
+
+        //if this is false, possibly errant reading. Require 3 consecutive stable readings to trust.
+        if(isSafeRateOfChange(headings, times))
+        {
+            if(imuHeadingInitialized == false)
+            {
+                headingOffset = oldOdom.pose.pose.orientation.z - yaw;
+                imuHeadingInitialized = true;
+                cout<<"heading offset = "<<oldOdom.pose.pose.orientation.z<<" - "<<yaw<<" = "<<headingOffset<<endl;
+            }
+            else
+            {
+                haveNewImuHeading = true;
+                cout<<"using imuheading"<<endl;
+            }
+        }
+        else
+        {
+            haveNewImuHeading = false;
+        }
+    }
 }
 
 void update_odom()
@@ -182,6 +262,47 @@ void update_odom()
     newOdom.twist.twist.linear.x = cycleDistance/(newOdom.header.stamp.toSec() - oldOdom.header.stamp.toSec());
     newOdom.twist.twist.angular.z = cycleAngle/(newOdom.header.stamp.toSec() - oldOdom.header.stamp.toSec());
 
+    //update orientation if we have a smart heading from IMU
+    if(haveNewImuHeading == true)
+    {
+        newOdom.pose.pose.orientation.z = imuHeading+headingOffset;
+        haveNewImuHeading = false;
+        for(int i = 0; i<36; i++)
+        {
+            if(i == 0 || i == 7 || i == 14)
+            {
+                newOdom.pose.covariance[i] = .002;
+            }
+            else if (i == 21 || i == 28 || i== 35)
+            {
+                newOdom.pose.covariance[i] = .001;
+            }
+            else
+            {
+                newOdom.pose.covariance[i] = 0;
+            }
+        }
+    }
+    else
+    {
+        for(int i = 0; i<36; i++)
+        {
+            if(i == 0 || i == 7 || i == 14)
+            {
+                newOdom.pose.covariance[i] = .0021;
+            }
+            else if (i == 21 || i == 28 || i== 35)
+            {
+                if(cycleAngle != 0 )
+                newOdom.pose.covariance[i] += .0001;
+            }
+            else
+            {
+                newOdom.pose.covariance[i] = 0;
+            }
+        }
+    }
+
     //save odom x, y, and theta for use in next cycle
     oldOdom.pose.pose.position.x = newOdom.pose.pose.position.x;
     oldOdom.pose.pose.position.y = newOdom.pose.pose.position.y;
@@ -210,13 +331,14 @@ int main(int argc, char **argv)
     oldOdom.pose.pose.orientation.z = initialTheta;
 
     //handshake with ros master and create node object
-    ros::init(argc, argv, "encoder_odom_publisher");
+    ros::init(argc, argv, "odom_plus");
     ros::NodeHandle node;
 
     //Subscribe to topics
     ros::Subscriber subForRightCounts = node.subscribe("rightWheel", 100, Calc_Right,ros::TransportHints().tcpNoDelay());
     ros::Subscriber subForLeftCounts = node.subscribe("leftWheel",100, Calc_Left,ros::TransportHints().tcpNoDelay());
     ros::Subscriber subInitialPose = node.subscribe("initial_2d", 1, setInitialPose);
+    ros::Subscriber subImu = node.subscribe("imu", 100, update_heading);
 
     //advertise publisher of simpler odom msg where orientation.z is an euler angle
     odom_pub = node.advertise<nav_msgs::Odometry>("encoder/odom", 100);

@@ -2,7 +2,7 @@
 *scan_to_ogm_beta.cpp
 *
 *This is a simple ROS node that accepts synchronized laser scan and pose messages to build an
-*occupancy grid map and publish that message. This is an example file to accompany chapter 10 
+*occupancy grid map and publish that map message. This is an example program to accompany chapter 10 
 *of the book Practical Robotics in C++ by Lloyd Brombach and published by Packt Publishing.
 *
 *Author: Lloyd Brombach (lbrombach2@gmail.com)

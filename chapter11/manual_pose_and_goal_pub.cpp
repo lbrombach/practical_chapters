@@ -2,8 +2,10 @@
 *manual_pose_and_goal.cpp
 *
 *This ros node publishes an initial_2d pose msg or goal_2d pose message as input by the user.
-*these msgs are published ignoring the quaternion nature and simply using z for yaw
+*these msgs are published ignoring the quaternion nature and simply using orientation z for yaw
 *the initialpose and move_base_simple/goal are also published as if user had clicked in rviz
+*This program is an accompaniment to the book Practical Robotics in C++
+*written by Lloyd Brombach and published by Packt Publishing
 *
 *Author: Lloyd Brombach (lbrombach2@gmail.com)
 *11/4/2019
