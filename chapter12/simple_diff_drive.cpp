@@ -286,7 +286,7 @@ int main(int argc, char **argv)
     ros::Subscriber subForVelocity = node.subscribe("cmd_vel", 1, Set_Speeds,ros::TransportHints().tcpNoDelay());
 
     ros::Rate loop_rate(30);
-    while(ros::ok)
+    while(ros::ok())
     {
      ros::spinOnce();
 

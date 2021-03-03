@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 
     //set to 1 hz
     ros::Rate loop_rate(1);
-    while (ros::ok)
+    while (ros::ok())
     {
         ros::spinOnce();
         //create listener. Must be static.

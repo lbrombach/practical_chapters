@@ -172,7 +172,7 @@ int main(int argc, char **argv)
     //advertise publisher
     pubMap = node.advertise<nav_msgs::OccupancyGrid>("map", 0);
 
-    while (ros::ok)
+    while (ros::ok())
     {
         ros::spin();
     }

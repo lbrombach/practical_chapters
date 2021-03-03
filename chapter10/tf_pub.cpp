@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     ros::Subscriber subOdom = node.subscribe("encoder/odom_quat", 10, handle_odom);
 
     ros::Rate loop_rate(30);
-    while (ros::ok)
+    while (ros::ok())
     {
      ros::spinOnce();
      loop_rate.sleep();

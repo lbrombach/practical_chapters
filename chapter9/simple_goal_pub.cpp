@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 
     ros::Publisher pubGoal = node.advertise<geometry_msgs::Pose2D>("waypoint", 0);
 
-    while (ros::ok)
+    while (ros::ok())
     {
 
         set_goal();

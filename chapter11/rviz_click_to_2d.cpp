@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 
     ros::Subscriber sub2 = node.subscribe("initialpose", 0, handle_initial_pose);
     ros::Rate loop_rate(10);
-    while (ros::ok)
+    while (ros::ok())
     {
         ros::spinOnce();
         loop_rate.sleep();

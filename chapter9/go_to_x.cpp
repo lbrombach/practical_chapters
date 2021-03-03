@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     ros::Rate loop_rate(10); //10 cycles per second
 
     //execute this loop until connection is lost with ROS Master 
-    while (ros::ok)
+    while (ros::ok())
     {
         //call the callbacks waiting to be called.
         ros::spinOnce();

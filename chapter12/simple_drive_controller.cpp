@@ -148,7 +148,7 @@ int main(int argc, char **argv)
     pubVelocity = node.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
     ros::Rate loop_rate(10);
-    while (ros::ok)
+    while (ros::ok())
     {
         ros::spinOnce();
         if(desired.pose.position.x != -1)

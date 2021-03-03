@@ -83,7 +83,7 @@ int main(int argc, char **argv)
     pub2 = node.advertise<geometry_msgs::PoseStamped>("initial_2d", 10);
     pub3 = node.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 10);
 
-    while (ros::ok)
+    while (ros::ok())
     {
         float x =-1;
         float y =-1;

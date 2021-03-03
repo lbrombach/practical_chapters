@@ -154,7 +154,7 @@ int main(int argc, char **argv)
   myImu.orientation_covariance[0] = -1;
 
   ros::Rate loop_rate(10);
-  while(ros::ok)
+  while(ros::ok())
   {
     get_accel();
     get_gyro();

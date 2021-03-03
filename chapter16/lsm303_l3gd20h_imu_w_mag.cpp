@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 
 
   ros::Rate loop_rate(10);
-  while(ros::ok)
+  while(ros::ok())
   {
     get_accel();
     get_gyro();

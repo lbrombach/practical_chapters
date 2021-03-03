@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     image_pub = it_.advertise("image_output", 1);
 
     ros::Rate loop_rate(30);
-    while (ros::ok)
+    while (ros::ok())
     {
         ros::spinOnce();
         loop_rate.sleep();

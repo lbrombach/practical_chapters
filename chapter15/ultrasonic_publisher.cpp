@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 
 
   ros::Rate loop_rate(10);
-  while(ros::ok)
+  while(ros::ok())
   {
     range.header.stamp = ros::Time::now();
     range.range = get_range(pi);

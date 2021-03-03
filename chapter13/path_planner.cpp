@@ -533,7 +533,7 @@ int main(int argc, char **argv)
     pathPub = node.advertise<nav_msgs::Path>("path", 0);
 
     ros::Rate loop_rate(1);
-    while (ros::ok)
+    while (ros::ok())
     {
         if (goalActive == true)
         {
