@@ -90,9 +90,9 @@ static int lastCountR = 0;
     if(rCount.data!=0&&lastCountR!=0)
     {
         int rightTicks = rCount.data - lastCountR;
-        if (rightDistance > 10000)
+        if (rightTicks > 10000)
         {
-            rightDistance=(0-(65535 - rightDistance))/TICKS_PER_M;
+            rightTicks=(0-(65535 - rightTicks))/TICKS_PER_M;
         }
         else if (rightTicks < -10000)
         {
