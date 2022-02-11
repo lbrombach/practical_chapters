@@ -2,10 +2,8 @@
 *manual_pose_and_goal.cpp
 *
 *This ros node publishes an initial_2d pose msg or goal_2d pose message as input by the user.
-*these msgs are published ignoring the quaternion nature and simply using orientation z for yaw
+*these msgs are published ignoring the quaternion nature and simply using z for yaw
 *the initialpose and move_base_simple/goal are also published as if user had clicked in rviz
-*This program is an accompaniment to the book Practical Robotics in C++
-*written by Lloyd Brombach and published by Packt Publishing
 *
 *Author: Lloyd Brombach (lbrombach2@gmail.com)
 *11/4/2019
@@ -27,21 +25,21 @@ void pub_msg(float x, float y, float yaw, int choice)
 {
     geometry_msgs::PoseWithCovarianceStamped pose;
     geometry_msgs::PoseStamped goal;
-    geometry_msgs::Pose rpy;
-    rpy.position.x = x;
-    rpy.position.y = y;
-    rpy.position.z = 0;
-    rpy.orientation.x = 0;
-    rpy.orientation.y = 0;
-    rpy.orientation.z = yaw;
-    rpy.orientation.w = 0;
+    geometry_msgs::PoseStamped rpy;
+    rpy.pose.position.x = x;
+    rpy.pose.position.y = y;
+    rpy.pose.position.z = 0;
+    rpy.pose.orientation.x = 0;
+    rpy.pose.orientation.y = 0;
+    rpy.pose.orientation.z = yaw;
+    rpy.pose.orientation.w = 0;
 
     if(choice == 1) //publish a pose
     {
         pose.header.frame_id = "map";
         pose.header.stamp = ros::Time::now();
-        pose.pose.pose = rpy;
-        pub2.publish(pose);
+        pose.pose.pose = rpy.pose;
+        pub2.publish(rpy);
     }
     else //publish a goal
     {
@@ -49,25 +47,25 @@ void pub_msg(float x, float y, float yaw, int choice)
 
         goal.header.frame_id = "map";
         goal.header.stamp = ros::Time::now();
-        goal.pose = rpy;
+        goal.pose = rpy.pose;
         pub.publish(goal);
     }
 
      tf2::Quaternion q;
      q.setRPY(0, 0, yaw);
-        rpy.orientation.x = q.x();
-        rpy.orientation.y = q.y();
-        rpy.orientation.z = q.z();
-        rpy.orientation.w = q.w();
+        rpy.pose.orientation.x = q.x();
+        rpy.pose.orientation.y = q.y();
+        rpy.pose.orientation.z = q.z();
+        rpy.pose.orientation.w = q.w();
 
         if(choice == 1) //publish a pose
     {
-        pose.pose.pose = rpy;
+        pose.pose.pose = rpy.pose;
         pub3.publish(pose);
     }
     else //publish a goal
     {
-        goal.pose = rpy;
+        goal.pose = rpy.pose;
         pub1.publish(goal);
     }
 
